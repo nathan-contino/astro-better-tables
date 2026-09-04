@@ -1,0 +1,46 @@
+---
+// Cell renders a <td> or <th>. Use inside <Row> inside <TableGrid>.
+// Content is markdown: **bold**, [links](url), `code`, etc. all work.
+
+interface Props {
+  colspan?: number;
+  rowspan?: number;
+  header?: boolean;
+  scope?: string;
+  align?: string;
+  valign?: string;
+  class?: string;
+}
+
+const { colspan, rowspan, header, scope, align, valign, class: cls } = Astro.props;
+
+// header cells default to scope="col"; explicit scope overrides
+const resolvedScope = header ? (scope ?? 'col') : scope;
+
+const style = [
+  align  ? `text-align: ${align}`       : '',
+  valign ? `vertical-align: ${valign}`  : '',
+].filter(Boolean).join('; ') || undefined;
+---
+
+{header ? (
+  <th
+    colspan={colspan}
+    rowspan={rowspan}
+    scope={resolvedScope}
+    style={style}
+    class={cls || undefined}
+  >
+    <slot />
+  </th>
+) : (
+  <td
+    colspan={colspan}
+    rowspan={rowspan}
+    scope={resolvedScope}
+    style={style}
+    class={cls || undefined}
+  >
+    <slot />
+  </td>
+)}

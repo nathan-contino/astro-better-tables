@@ -1,0 +1,57 @@
+---
+// TableGrid — for tables that need colspan/rowspan. Use <Row> and <Cell> as children.
+// Header rows: add slot="head" to <Row> components that belong in <thead>.
+// Column alignment: use align prop on individual <Cell> components.
+// Column widths: use widths prop here (same space-separated ratio syntax as <Table>).
+
+interface Props {
+  widths?: string;
+  caption?: string;
+  class?: string;
+  align?: 'left' | 'center' | 'right';
+  width?: string;
+}
+
+const { widths, caption, class: cls, align, width } = Astro.props;
+
+const widthVals = widths && widths !== 'auto'
+  ? widths.split(/\s+/).map(Number)
+  : null;
+const totalWidth = widthVals ? widthVals.reduce((a, b) => a + b, 0) : null;
+const colWidths = widthVals
+  ? widthVals.map(w => `${Math.round(w / totalWidth! * 100)}%`)
+  : null;
+
+const tableStyle = [
+  align === 'center' ? 'margin-left: auto; margin-right: auto' : '',
+  align === 'right'  ? 'margin-left: auto'                     : '',
+  width              ? `width: ${width}`                       : '',
+].filter(Boolean).join('; ') || undefined;
+
+const hasHead = Astro.slots.has('head');
+---
+
+<table class={`abt-grid-table${cls ? ' ' + cls : ''}`} style={tableStyle}>
+  {caption && <caption>{caption}</caption>}
+  {colWidths && (
+    <colgroup>
+      {colWidths.map((w) => <col style={`width: ${w}`} />)}
+    </colgroup>
+  )}
+  {hasHead && (
+    <thead>
+      <slot name="head" />
+    </thead>
+  )}
+  <tbody>
+    <slot />
+  </tbody>
+</table>
+
+<style is:global>
+  .abt-grid-table td > p:only-child,
+  .abt-grid-table th > p:only-child {
+    margin: 0;
+    padding: 0;
+  }
+</style>

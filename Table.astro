@@ -1,0 +1,149 @@
+---
+interface Props {
+  widths?: string;
+  colAlign?: string;
+  headerRows?: number;
+  stubCols?: number;
+  align?: 'left' | 'center' | 'right';
+  width?: string;
+  caption?: string;
+  class?: string;
+}
+
+const {
+  widths,
+  colAlign,
+  headerRows = 0,
+  stubCols = 0,
+  align,
+  width,
+  caption,
+  class: cls,
+} = Astro.props;
+
+const slotHtml = await Astro.slots.render('default');
+
+// Minimal tokenizer for the known structure: <ul><li><ul><li>cells</li></ul></li></ul>
+const VOID_TAGS = new Set([
+  'br','hr','img','input','meta','link','area','base',
+  'col','embed','param','source','track','wbr',
+]);
+
+function tokenize(html: string) {
+  type Token = { type: 'open' | 'close' | 'self' | 'text'; tag?: string; raw: string };
+  const tokens: Token[] = [];
+  const re = /<(\/?)([a-z][a-z0-9-]*)\b([^>]*?)(\/?)>/gi;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    if (m.index > last) tokens.push({ type: 'text', raw: html.slice(last, m.index) });
+    const tag = m[2].toLowerCase();
+    const isClose = m[1] === '/';
+    const isSelf = m[4] === '/' || VOID_TAGS.has(tag);
+    tokens.push({ type: isClose ? 'close' : (isSelf ? 'self' : 'open'), tag, raw: m[0] });
+    last = re.lastIndex;
+  }
+  if (last < html.length) tokens.push({ type: 'text', raw: html.slice(last) });
+  return tokens;
+}
+
+// State machine: outer list = rows, inner lists = cells per row.
+// Handles arbitrary HTML in cell content, including nested lists.
+function parseListTable(html: string): string[][] {
+  const tokens = tokenize(html);
+  const rows: string[][] = [];
+  // states: 0=before_outer_ul 1=in_outer_ul 2=in_row_li 3=in_inner_ul 4=in_cell_li
+  let state = 0;
+  let rowCells: string[] | null = null;
+  let cellContent = '';
+  let liDepth = 0;
+
+  for (const tok of tokens) {
+    if (state === 0) {
+      if (tok.type === 'open' && tok.tag === 'ul') state = 1;
+    } else if (state === 1) {
+      if (tok.type === 'open' && tok.tag === 'li') { rowCells = []; state = 2; }
+      else if (tok.type === 'close' && tok.tag === 'ul') break;
+    } else if (state === 2) {
+      if (tok.type === 'open' && tok.tag === 'ul') state = 3;
+      else if (tok.type === 'close' && tok.tag === 'li') { rows.push(rowCells!); rowCells = null; state = 1; }
+    } else if (state === 3) {
+      if (tok.type === 'open' && tok.tag === 'li') { cellContent = ''; liDepth = 0; state = 4; }
+      else if (tok.type === 'close' && tok.tag === 'ul') state = 2;
+    } else if (state === 4) {
+      // liDepth tracks nested <li> elements inside cell content (e.g., lists in a cell)
+      if (tok.type === 'close' && tok.tag === 'li' && liDepth === 0) {
+        rowCells!.push(cellContent.trim()); state = 3;
+      } else {
+        if (tok.type === 'open' && tok.tag === 'li') liDepth++;
+        if (tok.type === 'close' && tok.tag === 'li') liDepth--;
+        cellContent += tok.raw;
+      }
+    }
+  }
+  return rows;
+}
+
+const rows = parseListTable(slotHtml);
+
+const widthVals = widths && widths !== 'auto'
+  ? widths.split(/\s+/).map(Number)
+  : null;
+const totalWidth = widthVals ? widthVals.reduce((a, b) => a + b, 0) : null;
+const colWidths = widthVals
+  ? widthVals.map(w => `${Math.round(w / totalWidth! * 100)}%`)
+  : null;
+
+const colAligns = colAlign ? colAlign.split(/\s+/) : [] as string[];
+
+const tableStyle = [
+  align === 'center' ? 'margin-left: auto; margin-right: auto' : '',
+  align === 'right'  ? 'margin-left: auto'                     : '',
+  width              ? `width: ${width}`                       : '',
+].filter(Boolean).join('; ') || undefined;
+---
+
+<table class={`abt-table${cls ? ' ' + cls : ''}`} style={tableStyle}>
+  {caption && <caption>{caption}</caption>}
+  {colWidths && (
+    <colgroup>
+      {colWidths.map((w) => <col style={`width: ${w}`} />)}
+    </colgroup>
+  )}
+  {headerRows > 0 && (
+    <thead>
+      {rows.slice(0, headerRows).map((row) => (
+        <tr>
+          {row.map((html, i) => {
+            const al = colAligns[i];
+            const style = al ? `text-align: ${al}` : undefined;
+            return i < stubCols
+              ? <th scope="row" style={style} set:html={html}></th>
+              : <th scope="col" style={style} set:html={html}></th>;
+          })}
+        </tr>
+      ))}
+    </thead>
+  )}
+  <tbody>
+    {rows.slice(headerRows).map((row) => (
+      <tr>
+        {row.map((html, i) => {
+          const al = colAligns[i];
+          const style = al ? `text-align: ${al}` : undefined;
+          return i < stubCols
+            ? <th scope="row" style={style} set:html={html}></th>
+            : <td style={style} set:html={html}></td>;
+        })}
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style is:global>
+  .abt-table td > p:only-child,
+  .abt-table th > p:only-child {
+    margin: 0;
+    padding: 0;
+  }
+</style>

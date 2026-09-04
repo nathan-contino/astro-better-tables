@@ -1,0 +1,14 @@
+---
+// Row renders a <tr>. Use inside <TableGrid>.
+// To put a row in <thead>, add slot="head" on this component in the parent.
+
+interface Props {
+  class?: string;
+}
+
+const { class: cls } = Astro.props;
+---
+
+<tr class={cls || undefined}>
+  <slot />
+</tr>
