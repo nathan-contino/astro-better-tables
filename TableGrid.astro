@@ -10,9 +10,10 @@ interface Props {
   class?: string;
   align?: 'left' | 'center' | 'right';
   width?: string;
+  scroll?: boolean;
 }
 
-const { widths, caption, class: cls, align, width } = Astro.props;
+const { widths, caption, class: cls, align, width, scroll = true } = Astro.props;
 
 const widthVals = widths && widths !== 'auto'
   ? widths.split(/\s+/).map(Number)
@@ -31,24 +32,29 @@ const tableStyle = [
 const hasHead = Astro.slots.has('head');
 ---
 
-<table class={`abt-grid-table${cls ? ' ' + cls : ''}`} style={tableStyle}>
-  {caption && <caption>{caption}</caption>}
-  {colWidths && (
-    <colgroup>
-      {colWidths.map((w) => <col style={`width: ${w}`} />)}
-    </colgroup>
-  )}
-  {hasHead && (
-    <thead>
-      <slot name="head" />
-    </thead>
-  )}
-  <tbody>
-    <slot />
-  </tbody>
-</table>
+<div class:list={[{ 'abt-table-scroll': scroll }]}>
+  <table class={`abt-grid-table${cls ? ' ' + cls : ''}`} style={tableStyle}>
+    {caption && <caption>{caption}</caption>}
+    {colWidths && (
+      <colgroup>
+        {colWidths.map((w) => <col style={`width: ${w}`} />)}
+      </colgroup>
+    )}
+    {hasHead && (
+      <thead>
+        <slot name="head" />
+      </thead>
+    )}
+    <tbody>
+      <slot />
+    </tbody>
+  </table>
+</div>
 
 <style is:global>
+  .abt-table-scroll {
+    overflow-x: auto;
+  }
   .abt-grid-table td > p:only-child,
   .abt-grid-table th > p:only-child {
     margin: 0;

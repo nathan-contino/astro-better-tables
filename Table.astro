@@ -8,6 +8,7 @@ interface Props {
   width?: string;
   caption?: string;
   class?: string;
+  scroll?: boolean;
 }
 
 const {
@@ -19,6 +20,7 @@ const {
   width,
   caption,
   class: cls,
+  scroll = true,
 } = Astro.props;
 
 const slotHtml = await Astro.slots.render('default');
@@ -103,44 +105,49 @@ const tableStyle = [
 ].filter(Boolean).join('; ') || undefined;
 ---
 
-<table class={`abt-table${cls ? ' ' + cls : ''}`} style={tableStyle}>
-  {caption && <caption>{caption}</caption>}
-  {colWidths && (
-    <colgroup>
-      {colWidths.map((w) => <col style={`width: ${w}`} />)}
-    </colgroup>
-  )}
-  {headerRows > 0 && (
-    <thead>
-      {rows.slice(0, headerRows).map((row) => (
+<div class:list={[{ 'abt-table-scroll': scroll }]}>
+  <table class={`abt-table${cls ? ' ' + cls : ''}`} style={tableStyle}>
+    {caption && <caption>{caption}</caption>}
+    {colWidths && (
+      <colgroup>
+        {colWidths.map((w) => <col style={`width: ${w}`} />)}
+      </colgroup>
+    )}
+    {headerRows > 0 && (
+      <thead>
+        {rows.slice(0, headerRows).map((row) => (
+          <tr>
+            {row.map((html, i) => {
+              const al = colAligns[i];
+              const style = al ? `text-align: ${al}` : undefined;
+              return i < stubCols
+                ? <th scope="row" style={style} set:html={html}></th>
+                : <th scope="col" style={style} set:html={html}></th>;
+            })}
+          </tr>
+        ))}
+      </thead>
+    )}
+    <tbody>
+      {rows.slice(headerRows).map((row) => (
         <tr>
           {row.map((html, i) => {
             const al = colAligns[i];
             const style = al ? `text-align: ${al}` : undefined;
             return i < stubCols
               ? <th scope="row" style={style} set:html={html}></th>
-              : <th scope="col" style={style} set:html={html}></th>;
+              : <td style={style} set:html={html}></td>;
           })}
         </tr>
       ))}
-    </thead>
-  )}
-  <tbody>
-    {rows.slice(headerRows).map((row) => (
-      <tr>
-        {row.map((html, i) => {
-          const al = colAligns[i];
-          const style = al ? `text-align: ${al}` : undefined;
-          return i < stubCols
-            ? <th scope="row" style={style} set:html={html}></th>
-            : <td style={style} set:html={html}></td>;
-        })}
-      </tr>
-    ))}
-  </tbody>
-</table>
+    </tbody>
+  </table>
+</div>
 
 <style is:global>
+  .abt-table-scroll {
+    overflow-x: auto;
+  }
   .abt-table td > p:only-child,
   .abt-table th > p:only-child {
     margin: 0;
