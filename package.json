@@ -1,18 +1,38 @@
 {
   "name": "astro-better-tables",
   "version": "0.1.1",
-  "type": "module",
   "description": "RST-style list-table and grid-table components for Astro",
-  "author": "Nathan Contino <ncontino@lambdalatitudinarians.org>",
+  "keywords": [
+    "astro",
+    "astro-component",
+    "table",
+    "list-table",
+    "grid-table"
+  ],
   "license": "MIT",
-  "keywords": ["astro", "astro-component", "table", "list-table", "grid-table"],
-  "exports": {
-    "./Table.astro":     "./Table.astro",
-    "./TableGrid.astro": "./TableGrid.astro",
-    "./Row.astro":       "./Row.astro",
-    "./Cell.astro":      "./Cell.astro"
+  "author": "Nathan Contino <ncontino@lambdalatitudinarians.org>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/better-static-sites/better-static-sites.github.io.git",
+    "directory": "astro-better-tables"
   },
-  "files": ["Table.astro", "TableGrid.astro", "Row.astro", "Cell.astro"],
+  "homepage": "https://better-static-sites.github.io",
+  "bugs": {
+    "url": "https://github.com/better-static-sites/better-static-sites.github.io/issues"
+  },
+  "type": "module",
+  "exports": {
+    "./Table.astro": "./Table.astro",
+    "./TableGrid.astro": "./TableGrid.astro",
+    "./Row.astro": "./Row.astro",
+    "./Cell.astro": "./Cell.astro"
+  },
+  "files": [
+    "Table.astro",
+    "TableGrid.astro",
+    "Row.astro",
+    "Cell.astro"
+  ],
   "peerDependencies": {
     "astro": ">=4.0.0"
   }

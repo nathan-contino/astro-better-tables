@@ -147,9 +147,9 @@ Mark a `<Cell>` in a body row with `header` and `scope="row"` to make it a row h
 
 ---
 
-## Works with astro-refs
+## Works with astro-better-refs
 
-Links inside table cells support the `ref:` URL scheme from `astro-refs`:
+Links inside table cells support the `ref:` URL scheme from `astro-better-refs`:
 
 ```mdx
 - - [See the Widget A section](ref:widget-a-section)
